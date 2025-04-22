@@ -187,7 +187,7 @@ legend_handles = [
 ax.legend(handles=legend_handles, title="Kategorien", loc="lower left",
           fontsize=9, title_fontsize=10)
 
-ax.set_title("Schritt X: Kategorien‑Plot")
+ax.set_title("Schritt X: Kategorien‑Plot")
 ax.axis("off")
 plt.tight_layout()
 plt.show()
