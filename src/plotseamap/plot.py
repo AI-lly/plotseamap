@@ -23,17 +23,27 @@ log = logging.getLogger(__name__)
               help="Pfad zur Config-JSON-Datei")
 def plot_map(config_path):
     """
-    Liest die extrahierten Multipolygon-Layer aus dem GeoPackage und rendert die Karte ohne Linien,
+    Liest die extrahierten Multipolygon-Layer aus dem GeoPackage und rendert die Basis-Karte ohne Linien,
     mit smarter Beschriftung und korrekter Wasser-Klassifizierung (inkl. seamark:sea_area).
+    Optional kann die Karte als Datei abgelegt werden, um später AIS-Daten darauf zu zeichnen.
+    Config-Keys:
+      - output_gpkg (str): Pfad zum GeoPackage
+      - buffer_geojson (str): Pfad zur GeoJSON mit BBox-Puffer
+      - extract_layers (list): Layernamen ['multipolygons']
+      - plot.figsize (list): [width, height]
+      - output_plot (str): Pfad, um Basis-Karte zu speichern
+      - output_base_map (str, optional): zusätzlicher Pfad in data/processed zum Wiederaufruf
     """
     # Config laden
     with open(config_path) as f:
         cfg = json.load(f)
 
     gpkg = cfg["output_gpkg"]
-    buffer_geojson = cfg.get("output_buffer_geojson")
+    buffer_geojson = cfg.get("output_buffer_geojson") or cfg.get("buffer_geojson")
     figsize = tuple(cfg.get("plot", {}).get("figsize", [10, 8]))
     extract_layers = cfg.get("extract_layers", [])
+    output_plot = cfg.get("output_plot")
+    output_base = cfg.get("output_base_map")
 
     # Pfade prüfen
     if not os.path.exists(gpkg):
@@ -62,10 +72,9 @@ def plot_map(config_path):
     fig, ax = plt.subplots(figsize=figsize)
     bbox.plot(ax=ax, color="#d0e7f9", zorder=0)
 
-    # Wasser-Tags (OSM) und Sea Area-Seamark
+    # Wasser-Tags und seamark sea_area
     wasser_tags = ["water","wetland","bay","beach",
                    "strait","sand","shingle","mud"]
-
     legend_handles = []
 
     # Multipolygons verarbeiten
@@ -77,16 +86,14 @@ def plot_map(config_path):
             log.warning("Layer 'multipolygons' konnte nicht geladen werden.")
             gdf = gpd.GeoDataFrame(columns=["geometry"])
 
-        # Wasserflächen: OSM natural oder seamark sea_area
-        water = gdf[(gdf.get("natural","").isin(wasser_tags)) |
-                    (gdf.get("seamark:sea_area:category","") != "")]
-        # Military & Protected
-        mil   = gdf[gdf.get("landuse","") == "military"]
-        prot  = gdf[gdf.get("boundary","") == "protected_area"]
-        # Rest als Land
+        # Flächen klassifizieren
+        water = gdf[(gdf.get("natural","" ).isin(wasser_tags)) |
+                    (gdf.get("seamark:sea_area:category","" ) != "")]
+        mil   = gdf[gdf.get("landuse","" ) == "military"]
+        prot  = gdf[gdf.get("boundary","" ) == "protected_area"]
         land  = gdf.drop(water.index.union(mil.index).union(prot.index))
 
-        # Flächen plotten und legendieren
+        # Zeichnen
         if not land.empty:
             land.plot(ax=ax, facecolor="#f5f2eb", edgecolor="gray",
                       linewidth=0.5, zorder=1)
@@ -110,34 +117,38 @@ def plot_map(config_path):
             legend_handles.append(Line2D([0],[0], color="green", lw=2,
                                           label="Protected Area"))
 
-        # Intelligente Labels: nur Features mit 'name' und ausreichender Fläche
+        # Intelligente Beschriftung
         total_area = bbox_geom.area
-        min_area   = total_area / 300  # anpassen für bessere Lesbarkeit
+        min_area   = total_area / 300
         for subset, color in [(land, "black"), (water, "blue"),
                               (mil, "red"), (prot, "green")]:
             if "name" in subset.columns:
-                dfn = subset.dropna(subset=["name"])
-                for _, row in dfn.iterrows():
+                for _, row in subset.dropna(subset=["name"]).iterrows():
                     if row.geometry.area < min_area:
                         continue
                     pt = row.geometry.centroid
                     ax.text(pt.x, pt.y, row["name"], fontsize=6,
                             color=color, ha="center", va="center",
-                            path_effects=[pe.withStroke(linewidth=1,
-                                    foreground="white")])
+                            path_effects=[pe.withStroke(
+                                linewidth=1, foreground="white")])
 
-    # Legende, Titel, Layout
+    # Legende & Layout
     ax.legend(handles=legend_handles, loc="lower left", fontsize=8)
     ax.set_title(cfg.get("name","Karte").capitalize())
     ax.axis("off")
     plt.tight_layout()
 
-    # Speichern oder Anzeigen
-    out = cfg.get("output_plot")
-    if out:
-        os.makedirs(os.path.dirname(out), exist_ok=True)
-        plt.savefig(out, dpi=300, bbox_inches="tight")
-        log.info(f"Plot gespeichert nach {out}")
+    # Speichern Basis-Karte
+    if output_plot:
+        os.makedirs(os.path.dirname(output_plot), exist_ok=True)
+        plt.savefig(output_plot, dpi=300, bbox_inches="tight")
+        log.info(f"Basis-Karte gespeichert nach {output_plot}")
+
+    # zusätzlich als Basemap zum Wiederverwenden
+    if output_base:
+        os.makedirs(os.path.dirname(output_base), exist_ok=True)
+        plt.savefig(output_base, dpi=300, bbox_inches="tight")
+        log.info(f"Base-Map zusätzlich gespeichert nach {output_base}")
     else:
         plt.show()
 
