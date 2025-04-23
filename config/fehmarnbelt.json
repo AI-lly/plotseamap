@@ -27,5 +27,7 @@
   "output_plot": "output/plots/fehmarnbelt_map.png",
   "plot": {
     "figsize": [10, 8]
-  }
+  },
+  "output_base_map": "data/processed/maps/fehmarnbelt_base.png"
+
 }
