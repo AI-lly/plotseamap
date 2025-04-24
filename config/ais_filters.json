@@ -1,5 +1,5 @@
 {
-  "ais_file": "data/raw/ais/aisdk-2024-03-01.csv",
+  "ais_file": "data/raw/ais/aisdk-2022-10-01.csv",
   "bbox_geojson": "data/processed/geojson/fehmarnbelt_buffer.geojson",
   "ais_filters": {
     "Type of mobile": ["Class A", "Class B"],

@@ -1,5 +1,7 @@
+# src/ais/merge.py
 import os
 import glob
+import json
 import logging
 import pandas as pd
 import click
@@ -13,28 +15,38 @@ log = logging.getLogger(__name__)
 
 @click.command()
 @click.option(
-    "--input-dir", "input_dir",
-    default="data/raw/ais",
+    "--config", "config_path",
+    required=True,
     type=click.Path(exists=True),
-    help="Verzeichnis mit den AIS-CSV-Dateien"
+    help="Pfad zur AIS-Config-JSON"
 )
-@click.option(
-    "--output-csv", "output_csv",
-    default="data/processed/ais/combined_ais.csv",
-    type=click.Path(),
-    help="Pfad zur zusammengeführten AIS-CSV-Datei"
-)
-def merge_ais(input_dir, output_csv):
+def merge_ais(config_path):
     """
-    Liest alle CSV-Dateien im angegebenen Verzeichnis ein,
-    hängt sie zusammen und schreibt eine kombinierte CSV-Datei.
+    Liest alle CSV-Dateien im in der Config
+    unter 'ais_folder' angegebenen Verzeichnis ein,
+    hängt sie zusammen und schreibt sie nach 'merged_csv'.
     """
-    # Alle CSV-Dateien im Ordner finden
+    # Config laden
+    with open(config_path, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+
+    input_dir  = cfg.get("ais_folder")
+    output_csv = cfg.get("merged_csv")
+
+    if not input_dir or not os.path.isdir(input_dir):
+        log.error(f"Ungültiges AIS-Verzeichnis: {input_dir!r}")
+        raise click.Abort()
+
+    if not output_csv:
+        log.error("Config muss 'merged_csv' enthalten.")
+        raise click.Abort()
+
+    # CSV-Dateien suchen
     pattern = os.path.join(input_dir, "*.csv")
-    files = glob.glob(pattern)
+    files = sorted(glob.glob(pattern))
     if not files:
         log.error(f"Keine CSV-Dateien gefunden in {input_dir}")
-        return
+        raise click.Abort()
 
     log.info(f"Gefundene AIS-Dateien: {len(files)}")
     dfs = []
@@ -43,16 +55,14 @@ def merge_ais(input_dir, output_csv):
         df = pd.read_csv(fp, parse_dates=['# Timestamp'], low_memory=False)
         dfs.append(df)
 
-    # Zusammenführen
+    # zusammenführen
     combined = pd.concat(dfs, ignore_index=True)
-    log.info(f"Kombinierte Länge: {len(combined)} Zeilen")
+    log.info(f"Kombinierte Länge: {len(combined):,} Zeilen")
 
-    # Ausgabepfad sicherstellen
+    # ausgeben
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     combined.to_csv(output_csv, index=False)
-    log.info(f"Gespeichert: {output_csv}")
+    log.info(f"Zusammengeführte CSV geschrieben: {output_csv}")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     merge_ais()
-
-# python src/ais/merge.py --input-dir data/raw/ais --output-csv data/processed/ais/combined_ais.csv
