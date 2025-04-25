@@ -23,7 +23,7 @@
 
   "input_gpkg":            "data/processed/gpkg/fehmarnbelt_data.gpkg",
   "layer_name":            "multipolygons",
-  "buffer_distance":       40000,
+  "buffer_distance":       100,
   "output_buffer_geojson": "data/processed/geojson/fehmarnbelt_buffer.geojson",
 
   "output_plot": "output/plots/fehmarnbelt_map.png",

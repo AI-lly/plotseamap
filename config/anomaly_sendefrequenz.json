@@ -1,0 +1,13 @@
+{
+    "ais_file":            "data/processed/ais/fehmarnbelt_ais_filtered.csv",
+    "bbox_geojson":        "data/processed/geojson/fehmarnbelt_buffer.geojson",
+    "ais_filters": {
+        "Type of mobile": ["Class A", "Class B"],
+        "Navigational status": "Under way using engine",
+        "Ship type": "Cargo",
+        "Type of position fixing device": "GPS"
+      },
+    "output_anomalie_sendefrequenz_hist":     "output/plots/anomalie_detection/dt_histogram.png",
+    "output_anomalie_sendefrequenz_gmm":      "output/plots/anomalie_detection/dt_gmm_density.png",
+    "output_anomalie_sendefrequenz_track":    "output/plots/anomalie_detection/trajectory_anomalies.png"
+  }
