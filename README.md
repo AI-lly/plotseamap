@@ -38,7 +38,7 @@ A compact Python workflow that
 │   │   ├── buffer.py       # 500‑m coastal buffer
 │   │   └── plot.py         # save basemap PNG
 │   └── ais/
-│       ├── cli.py          # loader + plot entry points
+│       ├── merge.py        # combine multiple AIS-CSV files
 │       ├── loader.py       # merge & filter AIS CSVs
 │       └── plot.py         # draw trajectories on basemap
 └── README.md               # you are here
@@ -100,7 +100,7 @@ python src/ais/plot.py     \
 
 ---
 
-## 4  Config reference
+## 4  Config reference                                
 
 ### `config/fehmarnbelt.json`
 
@@ -136,7 +136,9 @@ python src/plotseamap/cli.py --config config/fehmarnbelt.json buffer
 python src/plotseamap/plot.py  --config config/fehmarnbelt.json
 
 # 2.  AIS pipeline (seconds‑minutes)
-python src/ais/loader.py --config config/ais_filters.json
+python src/ais/loader.py \
+  --config     config/ais_filters.json \
+  --map-config config/fehmarnbelt.json
 python src/ais/plot.py   --config config/ais_filters.json
 
 # 3.  Enjoy
