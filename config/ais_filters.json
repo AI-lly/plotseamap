@@ -4,10 +4,9 @@
   "ais_filters": {
     "Type of mobile": ["Class A", "Class B"],
     "Navigational status": "Under way using engine",
-    "Ship type": "Cargo",
     "Type of position fixing device": "GPS"
   },
-  "output_csv": "data/processed/ais/fehmarnbelt_ais_filtered.csv",
+  "output_csv": "data/processed/ais/fehmarnbelt_ais_filtered_no_ship_type.csv",
   "base_map_gpkg": "data/processed/gpkg/fehmarnbelt_data.gpkg",
   "base_map_png": "data/processed/maps/fehmarnbelt_base.png", 
   "base_map_layers": ["multipolygons","lines"],

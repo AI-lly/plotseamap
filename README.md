@@ -143,7 +143,11 @@ python src/ais/plot.py   --config config/ais_filters.json
 
 # 3.  Enjoy
 open output/plots/fehmarnbelt_ais.png   # macOS preview
-```
+
+# 4. Anomaly Detection
+python src/anomaly_detection/run_anomaly.py \
+  --map-config config/fehmarnbelt.json \
+  --ais-config config/ais_filters.json
 
 ---
 
