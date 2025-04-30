@@ -1,23 +1,31 @@
 {
-    "input_csv": "data/processed/ais/ais_data_fehmarn_radius.csv",
-    "output_clean_csv": "data/processed/ais/ais_data_fehmarn_radius_cleaned.csv",
-  
-    "ais_filters": {
-      "Type of mobile": ["Class A", "Class B"],
-      "Navigational status": "Under way using engine",
-      "Type of position fixing device": "GPS"
-    },
-  
-    "timestamp_column": "# Timestamp",
-    "ship_type_column": "Ship type",
-    "cargo_value": "Cargo",
-  
-    "dropna_features": [
-      "SOG",
-      "COG",
-      "Draught",
-      "Width",
-      "Length",
-      "delta_t"
-    ]
+  "input_csv": "data/processed/ais/ais_data_fehmarn_radius_cleaned.csv",
+  "output_clean_csv": "data/processed/ais/ais_data_fehmarn_radius_cleaned.csv",
+
+  "ais_filters": {
+    "Type of mobile": ["Class A", "Class B"],
+    "Navigational status": "Under way using engine",
+    "Type of position fixing device": "GPS"
+  },
+
+  "timestamp_column": "# Timestamp",
+  "ship_type_column": "Ship type",
+  "cargo_value": "Cargo",
+
+  "dropna_features": [
+    "SOG",
+    "COG",
+    "Draught",
+    "Width",
+    "Length",
+    "delta_t"
+  ],
+
+  "sequence_length": 20,
+  "min_sequence_length": 100,
+
+  "output": {
+    "sequences_dir": "data/processed/sequences",
+    "seq_length_hist": "output/plots/anomaly_detection/seq_length_hist.png"
   }
+}
