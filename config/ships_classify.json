@@ -21,11 +21,24 @@
     "delta_t"
   ],
 
-  "sequence_length": 20,
   "min_sequence_length": 100,
+  "sequence_length": 20,
+  "test_size": 0.2,
+  "random_state": 42,
 
   "output": {
     "sequences_dir": "data/processed/sequences",
     "seq_length_hist": "output/plots/anomaly_detection/seq_length_hist.png"
+  },
+
+  "model_output": "models/best_model.pt",
+
+  "training": {
+    "batch_size": 128,
+    "lr": 0.001,
+    "n_epochs": 20,
+    "patience": 3,
+    "val_size": 0.2,
+    "random_state": 42
   }
 }
