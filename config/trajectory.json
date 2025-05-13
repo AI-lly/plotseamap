@@ -1,0 +1,20 @@
+{
+    "input_csv":           "data/processed/ais/ais_data_fehmarn_radius.csv",
+    "ais_filters": {
+      "Type of mobile": ["Class A", "Class B"],
+      "Navigational status": "Under way using engine",
+      "Type of position fixing device": "GPS"
+    },
+    "timestamp": {
+      "column":      "# Timestamp",
+      "dayfirst":    true,
+      "drop_invalid": true
+    },
+    "delta_t": {
+      "group_by": "MMSI"
+    },
+    "target_ship_type": "Cargo",
+    "output": {
+      "cleaned_csv": "data/processed/ais/trajectories/ais_data_fehmarn_radius_cleaned.csv"
+    }
+  }
