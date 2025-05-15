@@ -22,7 +22,9 @@
         "interpolated_csv":  "data/processed/bearing/ais_interpolated.csv",
         "with_bearing_csv":  "data/processed/bearing/ais_with_bearing.csv",
         "with_rate_csv":     "data/processed/bearing/ais_with_bearing_rate.csv",
-        "with_distance_csv": "data/processed/bearing/ais_with_distance.csv"
+        "with_distance_csv": "data/processed/bearing/ais_with_distance.csv",
+        "sector_hist_csv": "data/processed/bearing/sector_histogram.csv",
+        "sector_hist_png": "data/processed/bearing/sector_histogram.png"
       },
 
     "interpolation": {

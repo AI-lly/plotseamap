@@ -44,7 +44,7 @@ def main(cfg_path: str) -> None:
     log.info(f"→ Config geladen: {cfg_path}")
 
     # Dateipfade
-    in_csv  = cfg["output"].get("with_bearing_csv", cfg["output"]["interpolated_csv"])
+    in_csv  = cfg["output"]["with_rate_csv"]
     out_csv = cfg["output"].get("with_distance_csv",
                                 "data/processed/bearing/ais_with_distance.csv")
 
