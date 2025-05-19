@@ -5,7 +5,7 @@
     "data/raw/osm/denmark-latest.osm.pbf",
     "data/raw/osm/schleswig-holstein-latest.osm.pbf"
   ],
-  "merged_pbf": "data/raw/osm/denmark_sh.pbf",
+  "merged_pbf": "data/processed/osm/merged_denmark_sh.pbf",
   "bbox_pbf":   "data/processed/osm/fehmarnbelt_bbox.osm.pbf",
 
   "lon":    11.289016242073087,

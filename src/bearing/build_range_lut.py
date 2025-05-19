@@ -94,3 +94,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# python src/bearing/build_range_lut.py 

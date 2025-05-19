@@ -129,11 +129,11 @@ python src/ais/plot.py     \
 source AIS/bin/activate
 
 # 1.  Map pipeline (takes ~45 min once)
-python src/plotseamap/cli.py --config config/fehmarnbelt.json merge
-python src/plotseamap/cli.py --config config/fehmarnbelt.json clip
-python src/plotseamap/cli.py --config config/fehmarnbelt.json extract
-python src/plotseamap/cli.py --config config/fehmarnbelt.json buffer
-python src/plotseamap/plot.py  --config config/fehmarnbelt.json
+python src/plotseamap/cli.py --config src/plotseamap/config/fehmarnbelt.json    merge
+python src/plotseamap/cli.py --config src/plotseamap/config/fehmarnbelt.json    clip
+python src/plotseamap/cli.py --config src/plotseamap/config/fehmarnbelt.json    extract
+python src/plotseamap/cli.py --config src/plotseamap/config/fehmarnbelt.json    buffer
+python src/plotseamap/plot.py  --config src/plotseamap/config/fehmarnbelt.json   
 
 # 2.  AIS pipeline (seconds‑minutes)
 python src/ais/loader.py \

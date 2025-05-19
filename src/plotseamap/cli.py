@@ -11,7 +11,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 
 from plotseamap.merge import merge_pbf
-from plotseamap.clip_bbox import clip_bbox
+from plotseamap.clip import clip_bbox
 from plotseamap.extract import extract_stream  # falls ersetzt
 from plotseamap.convert import convert_to_gpkg
 from plotseamap.buffer import buffer_layer

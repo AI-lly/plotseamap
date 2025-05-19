@@ -68,3 +68,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# python src/bearing/lookup_range.py 88 -0.042
