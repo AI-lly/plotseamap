@@ -56,18 +56,20 @@ src/
 
 # 3.  Step-by-step pipeline
 
-Jeder Schritt liest dieselbe **`--config bearing.json`**:
+Jeder Schritt liest dieselbe **`--config src/bearing/config/bearing.json`** und schreibt seine Ausgabe nach `processed_data/`.
 
-| #  | Command                                                                                           | Beschreibung                                              |
-|----|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
-| 1  | `python src/bearing/preprocess/load_and_clean.py --config src/bearing/config/bearing.json`        | Filter & Bereinigung → `01_cleaned.csv`                   |
-| 2  | `python src/bearing/preprocess/interpolate_timeseries.py --config src/bearing/config/bearing.json`| Einheits-Zeitraster (z.B. 20 s) → `02_interpolated.csv`   |
-| 3  | `python src/bearing/preprocess/compute_bearing.py --config src/bearing/config/bearing.json`       | Peilung berechnen → `03_bearing.csv`                      |
-| 4  | `python src/bearing/preprocess/compute_rate.py --config src/bearing/config/bearing.json`          | Peilungs-Rate → `04_rate.csv`                             |
-| 5  | `python src/bearing/preprocess/compute_distance.py --config src/bearing/config/bearing.json`      | Distanz zur Antenne → `05_distance.csv`                   |
-| 6  | `python src/bearing/preprocess/compute_sector_stats.py --config src/bearing/config/bearing.json`  | Sektor-Histogramm → `06_sector_histogram.csv`             |
+| #   | Command                                                                                             | Output                              | Beschreibung                                                    |
+|-----|-----------------------------------------------------------------------------------------------------|-------------------------------------|-----------------------------------------------------------------|
+| 1   | `python src/bearing/preprocess/load_and_clean.py --config src/bearing/config/bearing.json`         | `01_cleaned.csv`                    | AIS-Daten filtern & Timestamps säubern                          |
+| 2   | `python src/bearing/preprocess/interpolate_timeseries.py --config src/bearing/config/bearing.json` | `02_interpolated.csv`               | Einheitliches Zeitraster (z. B. 20 s) pro MMSI-Segment           |
+| 3   | `python src/bearing/preprocess/compute_bearing.py --config src/bearing/config/bearing.json`        | `03_bearing.csv`                    | Initial-Bearing (°) für jeden Zeitstempel                       |
+| 4   | `python src/bearing/preprocess/compute_rate.py --config src/bearing/config/bearing.json`           | `04_rate.csv`                       | Peilungs-Änderungsrate (°/s)                                     |
+| 5   | `python src/bearing/preprocess/compute_distance.py --config src/bearing/config/bearing.json`       | `05_distance.csv`                   | Distanz (m) zur Antenne                                          |
+| 6   | `python src/bearing/preprocess/compute_sector_stats.py --config src/bearing/config/bearing.json`   | `06_sector_histogram.csv`           | Sektor-Histogramm (Azimut × Distanz) → P(r | θ)                   |
+| 7   | `python src/bearing/build_range_lut.py --config src/bearing/config/bearing.json`                   | `range_lut.pkl`                     | Lookup-Table für P(r | θ, ω) aus Histogramm                       |
+| 8   | `python src/bearing/lookup_range.py 88 -0.042 --lut src/bearing/processed_data/range_lut.pkl`      | (stdout: Wahrscheinlichkeiten)      | Distanz-PDF für θ = 88° und ω = −0.042 °/s aus der Lookup-Table  |
 
-Nach Schritt 6 liegen dir alle CSVs und ein sektorielles Wahrscheinlichkeits-Histogramm vor.
+Nach Schritt 7 liegt die Pickle-Datei `range_lut.pkl` vor, und Schritt 8 zeigt exemplarisch, wie man für einen gemessenen Bearing und eine Bearing-Rate die bedingte Distanzverteilung abfragt.
 
 ---
 
@@ -75,53 +77,68 @@ Nach Schritt 6 liegen dir alle CSVs und ein sektorielles Wahrscheinlichkeits-His
 
 ### `src/bearing/config/bearing.json`
 
-| Key                          | Typ        | Default    | Bedeutung                                                         |
-|------------------------------|------------|------------|-------------------------------------------------------------------|
-| `input_csv`                  | String     | —          | Pfad zu den Roh-AIS-Daten                                         |
-| `timestamp_column`           | String     | `# Timestamp` | Spaltenname mit Zeitstempel                                  |
-| `dayfirst`                   | Bool       | `true`     | Datumsparsing im DMY-Format                                      |
-| `drop_invalid_ts`            | Bool       | `true`     | Ungültige Timestamps verwerfen                                   |
-| `lat_column`, `lon_column`   | String     | —          | Spaltennamen für Breiten-/Längengrad                              |
-| `ais_filters`                | Objekt     | —          | OSM-like Filter für AIS-Daten (Class, Status, Ship type etc.)     |
-| **Interpolation**            |            |            |                                                                   |
-| └─ `interpolation.interval_seconds` | Int   | `20`       | Zeitraster in Sekunden                                            |
-| └─ `interpolation.max_gap_minutes` | Int     | `60`       | Max. Lücke → neuer Segment                                       |
-| **Antenne**                  |            |            |                                                                   |
-| └─ `antenna.latitude`        | Float      | —          | Antennen-Breitengrad                                              |
-| └─ `antenna.longitude`       | Float      | —          | Antennen-Längengrad                                               |
-| **Δt für Rate**              |            |            |                                                                   |
-| └─ `delta_t_sec`             | Int        | Interval  | Sekunden-Intervall für Rate-Berechnung                             |
-| **Ausgabe-Pfade**            | Objekt     | —          |                                                                   |
-| └─ `output.cleaned_csv`      | String     | —          | Gefilterte AIS-Daten                                              |
-| └─ `output.interpolated_csv` | String     | —          | AIS mit äquidistantem Zeitraster                                  |
-| └─ `output.with_bearing_csv` | String     | —          | AIS mit Peilung                                                   |
-| └─ `output.with_distance_csv`| String     | —          | AIS mit Distanz                                                   |
-| └─ `output.with_rate_csv`    | String     | —          | AIS mit Peilungs-Rate                                             |
-| └─ `output.sector_hist_csv`  | String     | —          | Sektor-Histogramm CSV                                             |
+| Key                                    | Typ        | Default    | Bedeutung                                                         |
+|----------------------------------------|------------|------------|-------------------------------------------------------------------|
+| `input_csv`                            | String     | —          | Pfad zu den Roh-AIS-Daten                                         |
+| `timestamp_column`                     | String     | `# Timestamp` | Spaltenname mit Zeitstempel                                  |
+| `dayfirst`                             | Bool       | `true`     | Datumsparsing im DMY-Format                                      |
+| `drop_invalid_ts`                      | Bool       | `true`     | Ungültige Timestamps verwerfen                                   |
+| `lat_column`, `lon_column`             | String     | —          | Spaltennamen für Breiten- und Längengrad                          |
+| `distance_column`                      | String     | `dist_m`   | Spaltenname für Distanz zur Antenne                              |
+| `ais_filters`                          | Objekt     | —          | OSM-like Filter für AIS-Daten (Class, Status, Ship type etc.)     |
+| **Interpolation**                      | —          | —          |                                                                   |
+| └─ `interpolation.interval_seconds`    | Int        | `20`       | Zeitraster in Sekunden                                            |
+| └─ `interpolation.max_gap_minutes`     | Int        | `60`       | Max. Lücke → neuer Segment                                       |
+| **Antenne**                            | —          | —          |                                                                   |
+| └─ `antenna.latitude`                  | Float      | —          | Antennen-Breitengrad                                              |
+| └─ `antenna.longitude`                 | Float      | —          | Antennen-Längengrad                                               |
+| **Δt für Rate**                        | —          | —          |                                                                   |
+| └─ `delta_t_sec`                       | Int        | `20`       | Konstanter Δt (in s) zur Berechnung der Peilungs-Rate             |
+| **Ausgabe-Pfade**                      | Objekt     | —          |                                                                   |
+| └─ `output.cleaned_csv`                | String     | —          | Gefilterte AIS-Daten                                              |
+| └─ `output.interpolated_csv`           | String     | —          | AIS mit äquidistantem Zeitraster                                  |
+| └─ `output.with_bearing_csv`           | String     | —          | AIS mit berechneter Peilung                                       |
+| └─ `output.with_rate_csv`              | String     | —          | AIS mit berechneter Peilungs-Rate                                  |
+| └─ `output.with_distance_csv`          | String     | —          | AIS mit berechneter Distanz                                       |
+| └─ `output.sector_hist_csv`            | String     | —          | Sektor-Histogramm CSV                                             |
+| └─ `output.sector_hist_png`            | String     | —          | Polar-Heatmap als PNG                                             |
+| **Statistics**                         | —          | —          |                                                                   |
+| └─ `statistics.az_bin_deg`             | Int        | `5`        | Azimut-Bin-Breite (in °)                                           |
+| └─ `statistics.rate_edges`             | List[Float]| `[0,0.01,…,10]` | Kanten der Bearing-Rate-Bins (in °/s)                     |
+| └─ `statistics.r_step_m`               | Int        | `500`      | Distanz-Bin-Breite (in m)                                          |
+| └─ `statistics.r_max_m`                | Int        | `20000`    | Maximaler Radius (in m) für Histogramm                             |
+| └─ `statistics.output`                 | String     | —          | Pfad zur Pickle-Datei mit der Lookup-Table                         |
 
 ---
 
 # 5.  Typical full run
 
 ```bash
-# 0. Virtualenv aktivieren, Abhängigkeiten installieren
+# 0) Virtuelle Umgebung aktivieren & Abhängigkeiten installieren
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# 1. AIS-Vorverarbeitung
-python src/bearing/preprocess/load_and_clean.py        --config src/bearing/config/bearing.json
+# 1) Preprocessing
+python src/bearing/preprocess/load_and_clean.py --config src/bearing/config/bearing.json
 python src/bearing/preprocess/interpolate_timeseries.py --config src/bearing/config/bearing.json
 
-# 2. Feature-Berechnung
-python src/bearing/preprocess/compute_bearing.py   --config src/bearing/config/bearing.json
-python src/bearing/preprocess/compute_rate.py      --config src/bearing/config/bearing.json
-python src/bearing/preprocess/compute_distance.py  --config src/bearing/config/bearing.json
+# 2) Feature-Berechnung
+python src/bearing/preprocess/compute_bearing.py --config src/bearing/config/bearing.json
+python src/bearing/preprocess/compute_rate.py --config src/bearing/config/bearing.json
+python src/bearing/preprocess/compute_distance.py --config src/bearing/config/bearing.json
 
-# 3. Statistik & Histogramm
-#python src/bearing/preprocess/compute_sector_stats.py --config src/bearing/config/bearing.json
-python src/bearing/build_range_lut.py 
-python src/bearing/lookup_range.py 88 -0.042
+# 3) Statistik & Histogramme
+python src/bearing/compute_sector_stats.py --config src/bearing/config/bearing.json
 
-# Ergebnis
-# • data/processed/bearing/ais_with_rate.csv
-# • data/processed/bearing/sector_histogram_5deg_500m.csv
+# 4) Lookup-Table erzeugen & Abfrage
+python src/bearing/build_range_lut.py --config src/bearing/config/bearing.json
+python src/bearing/lookup_range.py 88 -0.042 --lut src/bearing/processed_data/range_lut.pkl
+
+# Ergebnisse finden Sie in:
+#  • src/bearing/processed_data/01_cleaned.csv
+#  • src/bearing/processed_data/02_interpolated.csv
+#  • src/bearing/processed_data/03_bearing.csv
+#  • src/bearing/processed_data/04_rate.csv
+#  • src/bearing/processed_data/05_distance.csv
+#  • src/bearing/processed_data/06_sector_histogram.csv
+#  • src/bearing/processed_data/range_lut.pkl
