@@ -30,26 +30,26 @@ Ziel ist es, aus historischen AIS-Meldungen
 src/
 └── bearing/
     ├── config/
-    │   └── bearing.json              # Alle Parameter & Ausgabepfade
+    │   └── bearing.json              # Zentrale Parameter & Ausgabepfade
     ├── processed_data/               # Ausgabedaten aller Pipeline-Stufen
-    │   ├── 01_cleaned.csv            # Gefilterte & gesäuberte AIS-Daten
+    │   ├── 01_cleaned.csv            # Gefiltert & gesäubert
     │   ├── 02_interpolated.csv       # + äquidistante Zeitstempel
     │   ├── 03_bearing.csv            # + Initial Bearing (°)
-    │   ├── 04_rate.csv               # + Peilungsänderungs-Rate (°/s)
-    │   ├── 05_distance.csv           # + Distanz (m) zur Antenne
+    │   ├── 04_rate.csv               # + Peilungsänderungsrate (°/s)
+    │   ├── 05_distance.csv           # + Distanz zur Antenne (m)
     │   └── 06_sector_histogram.csv   # Sektor-Histogramm → P(r | θ)
-    ├── preprocess/                   # Preprocessing-Skripte
-    │   ├── load_and_clean.py         # 1) AIS laden, filtern, Timestamp säubern
-    │   ├── interpolate_timeseries.py # 2) Zeitliche Interpolation pro MMSI-Segment
+    ├── preprocess/                   # Vorverarbeitungsskripte
+    │   ├── load_and_clean.py         # 1) AIS laden & filtern
+    │   ├── interpolate_timeseries.py # 2) Zeit-Interpolation pro MMSI
     │   ├── compute_bearing.py        # 3) Initial Bearing berechnen
-    │   ├── compute_rate.py           # 4) Peilungsänderungs-Rate berechnen
-    │   ├── compute_distance.py       # 5) Distanz zur Antenne berechnen
-    │   └── pipeline.py               # Wrapper: Schritt 1–5 in Folge ausführen
+    │   ├── compute_rate.py           # 4) Peilungsänderungsrate berechnen
+    │   ├── compute_distance.py       # 5) Distanzberechnung zur Antenne
+    │   └── pipeline.py               # Wrapper: Schritte 1–5 in Serie
     ├── compute_sector_stats.py       # 6) Sektor-Histogramm (Azimut × Distanz)
-    ├── build_range_lut.py            # Beispiel: Range-LUT abfragen (P(r|θ,ω))
-    ├── lookup_range.py               # Beispiel: Range-LUT abfragen (P(r|θ,ω))
-    ├── math.md
-    └── README_bearing.md
+    ├── build_range_lut.py            # Erzeuge Lookup-Table für P(r | θ,ω)
+    ├── lookup_range.py               # Beispiel: Abfrage der Range-LUT
+    ├── math.md                       # Mathematische Herleitung & Notation
+    └── README_bearing.md             # Anleitung & Projektübersicht
 ```
 
 ---
