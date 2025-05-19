@@ -6,3 +6,9 @@ include/
 notebooks/
 share/
 processed/
+src/plotseamap/processed_data/
+src/plotseamap/output
+
+
+#git rm -r --cached src/plotseamap/processed_data
+#git commit -m "Ignore processed_data directory"
