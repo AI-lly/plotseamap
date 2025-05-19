@@ -1,0 +1,6 @@
+pyosmium>=3.4.0
+geopandas>=0.12.0
+fiona>=1.8.0
+shapely>=2.0.0
+click>=8.0.0
+matplotlib>=3.5.0

@@ -1,0 +1,34 @@
+{
+  "name": "fehmarnbelt",
+
+  "raw_pbf_files": [
+    "data/raw/osm/denmark-latest.osm.pbf",
+    "data/raw/osm/schleswig-holstein-latest.osm.pbf"
+  ],
+  "merged_pbf": "src/plotseamap/processed_data/osm/merged_denmark_sh.pbf",
+  "bbox_pbf":   "src/plotseamap/processed_data/osm/fehmarnbelt_bbox.osm.pbf",
+
+  "lon":    11.289016242073087,
+  "lat":    54.578614024736964,
+  "radius": 40,
+
+  "output_gpkg": "src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg",
+
+  "extract_layers": [
+    "lines",
+    "multilinestrings",
+    "multipolygons",
+    "other_relations"
+  ],
+
+  "input_gpkg":            "src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg",
+  "layer_name":            "multipolygons",
+  "buffer_distance":       100,
+  "output_buffer_geojson": "src/plotseamap/processed_data/geojson/fehmarnbelt_buffer.geojson",
+
+  "output_plot": "src/plotseamap/output/plots/fehmarnbelt_map.png",
+  "plot": {
+    "figsize": [10, 8]
+  },
+  "output_base_map": "src/plotseamap/processed_data/maps/fehmarnbelt_base.png"
+}

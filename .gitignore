@@ -10,5 +10,5 @@ src/plotseamap/processed_data/
 src/plotseamap/output
 
 
-#git rm -r --cached src/plotseamap/processed_data
-#git commit -m "Ignore processed_data directory"
+#git rm -r --cached src/plotseamap/output
+#git commit -m "Ignore output directory"
