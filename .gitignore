@@ -8,7 +8,7 @@ share/
 processed/
 src/plotseamap/processed_data/
 src/plotseamap/output
-
+src/bearing/processed_data
 
 #git rm -r --cached src/plotseamap/output
 #git commit -m "Ignore output directory"

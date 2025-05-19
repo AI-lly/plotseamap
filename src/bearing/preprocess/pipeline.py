@@ -52,4 +52,4 @@ def main(cfg_path):
 if __name__ == "__main__":
     main()
 
-# python src/bearing/pipeline.py --config src/bearing/config/bearing.json
+# python src/bearing/preprocess/pipeline.py --config src/bearing/config/bearing.json
