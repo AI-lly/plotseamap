@@ -118,7 +118,9 @@ python src/bearing/preprocess/compute_rate.py      --config src/bearing/config/b
 python src/bearing/preprocess/compute_distance.py  --config src/bearing/config/bearing.json
 
 # 3. Statistik & Histogramm
-python src/bearing/preprocess/compute_sector_stats.py --config src/bearing/config/bearing.json
+#python src/bearing/preprocess/compute_sector_stats.py --config src/bearing/config/bearing.json
+python src/bearing/build_range_lut.py 
+python src/bearing/lookup_range.py 88 -0.042
 
 # Ergebnis
 # • data/processed/bearing/ais_with_rate.csv
