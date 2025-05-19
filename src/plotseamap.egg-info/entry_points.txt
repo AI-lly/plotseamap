@@ -1,2 +1,0 @@
-[console_scripts]
-plotseamap = plotseamap.cli:main
