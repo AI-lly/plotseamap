@@ -1,4 +1,11 @@
-# plotseamap
+# Inhaltsverzeichnis
+- [Projektübersicht](#1-plotseamap)
+- [Projektstruktur](#2-project-tree)
+- [Pipeline-Schritte](#3-step-by-step-pipeline)
+- [Konfigurationsreferenz](#4-config-reference)
+- [Beispiel-Ablauf](#5-typical-full-run)
+
+# 1. plotseamap
 
 `plotseamap` ist eine kleine Python-Toolchain zum Extrahieren, Aufbereiten und Plotten von OSM-Daten für ein definiertes Seegebiet.  
 Es unterstützt:
@@ -12,18 +19,7 @@ Es unterstützt:
 
 ---
 
-## Features
-
-- **CLI-basiert** mit [Click](https://click.palletsprojects.com/)  
-- **Streaming** mit [pyosmium/osmium](https://osmcode.org/pyosmium/) → geringe RAM-Last  
-- **Batch-Export** via [Fiona](https://fiona.readthedocs.io/) & [GeoPandas](https://geopandas.org/)  
-- **Flexible Konfiguration** über ein JSON-File  
-- **Automatische CRS-Handhabung** (WGS84 ↔ UTM)  
-- **Integrierter Plot** mit [Matplotlib](https://matplotlib.org/) & [Shapely](https://shapely.readthedocs.io/)  
-
----
-
-## 1  Project tree
+# 2.  Project tree
 
 ```
 src/
@@ -48,7 +44,7 @@ src/
 
 ---
 
-## 3  Step‑by‑step pipeline
+# 3.  Step by step pipeline
 
 Build the local OSM map (`src/plotseamap`)
 
@@ -64,7 +60,7 @@ After step 5 you have a ready PNG and a GeoJSON mask for further use.
 
 ---
 
-## 4  Config reference                                
+# 4.  Config reference                                
 
 ### `src/plotseamap/config/fehmarnbelt.json`
 
@@ -78,7 +74,7 @@ After step 5 you have a ready PNG and a GeoJSON mask for further use.
 
 ---
 
-## 5  Typical full run
+# 5.  Typical full run
 
 ```bash
 # 0.  Activate venv, install packages
