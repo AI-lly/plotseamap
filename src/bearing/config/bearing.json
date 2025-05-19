@@ -18,13 +18,13 @@
     },
     "bearing_column": "bearing",
     "output": {
-        "cleaned_csv":       "data/processed/bearing/ais_cleaned.csv",
-        "interpolated_csv":  "data/processed/bearing/ais_interpolated.csv",
-        "with_bearing_csv":  "data/processed/bearing/ais_with_bearing.csv",
-        "with_rate_csv":     "data/processed/bearing/ais_with_bearing_rate.csv",
-        "with_distance_csv": "data/processed/bearing/ais_with_distance.csv",
-        "sector_hist_csv": "data/processed/bearing/sector_histogram.csv",
-        "sector_hist_png": "data/processed/bearing/sector_histogram.png"
+        "cleaned_csv":       "src/bearing/processed_data/ais_cleaned.csv",
+        "interpolated_csv":  "src/bearing/processed_data/ais_interpolated.csv",
+        "with_bearing_csv":  "src/bearing/processed_data/ais_with_bearing.csv",
+        "with_rate_csv":     "src/bearing/processed_data/ais_with_bearing_rate.csv",
+        "with_distance_csv": "src/bearing/processed_data/ais_with_distance.csv",
+        "sector_hist_csv": "src/bearing/processed_data/sector_histogram.csv",
+        "sector_hist_png": "src/bearing/processed_data/sector_histogram.png"
       },
 
     "interpolation": {
