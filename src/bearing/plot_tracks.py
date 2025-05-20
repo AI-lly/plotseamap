@@ -4,126 +4,227 @@
 src/bearing/plot_tracks.py
 
 Zeichnet AIS-Tracklinien auf die Basemap aus plotseamap.
-Alles innerhalb eines gegebenen Radius um die Antenne wird dargestellt.
+Alles vorkonfiguriert, so dass kein weiteres CLI-Argument nötig ist.
+Override möglich über --help-Optionen.
 """
-import json
+import os
 import logging
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import geopandas as gpd
+import click
 import pandas as pd
-from shapely.geometry import LineString, Point
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
+from shapely.geometry import box, Point, LineString
 
 # ───────────────────────────────────────────────────────────────────────
-# Logging konfigurieren
+# Logging
 # ───────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # ───────────────────────────────────────────────────────────────────────
-# Konstanten / Pfade
+# Vorkonfigurierte Defaults
 # ───────────────────────────────────────────────────────────────────────
-CONFIG_PATH = Path("src/bearing/config/bearing.json")
-GPKG_PATH   = Path("src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg")
-AIS_CSV     = Path("src/bearing/processed_data/05_distance.csv")
-LAYERS      = ["multipolygons", "lines", "multilinestrings"]  # Basemap-Layer
+DEFAULT_GPKG       = "src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg"
+DEFAULT_BUFFER     = "src/plotseamap/processed_data/geojson/fehmarnbelt_buffer.geojson"
+DEFAULT_AIS_CSV    = "src/bearing/processed_data/05_distance.csv"
+DEFAULT_ANT_LAT    = 54.578614
+DEFAULT_ANT_LON    = 11.289016
+DEFAULT_RADIUS_KM  = 30.0
+DEFAULT_FIGSIZE    = "10,8"
 
-# Radius um Antenne in km
-PLOT_RADIUS_KM = 30
 
+@click.command()
+@click.option(
+    "--gpkg", "gpkg_path",
+    default=DEFAULT_GPKG,
+    show_default=True,
+    help="GeoPackage (Basemap) mit OSM-Layern"
+)
+@click.option(
+    "--buffer-geojson", "buffer_path",
+    default=DEFAULT_BUFFER,
+    show_default=True,
+    help="GeoJSON mit Puffer-Polygon für Extent"
+)
+@click.option(
+    "--ais-csv", "ais_csv",
+    default=DEFAULT_AIS_CSV,
+    show_default=True,
+    help="AIS-Daten-CSV (mit Spalte dist_m)"
+)
+@click.option(
+    "--ant-lat", "ant_lat",
+    default=DEFAULT_ANT_LAT,
+    show_default=True,
+    type=float,
+    help="Breitengrad der Antenne"
+)
+@click.option(
+    "--ant-lon", "ant_lon",
+    default=DEFAULT_ANT_LON,
+    show_default=True,
+    type=float,
+    help="Längengrad der Antenne"
+)
+@click.option(
+    "--radius-km", "radius_km",
+    default=DEFAULT_RADIUS_KM,
+    show_default=True,
+    type=float,
+    help="Radius um die Antenne in km"
+)
+@click.option(
+    "--figsize", "figsize",
+    default=DEFAULT_FIGSIZE,
+    show_default=True,
+    help="Figure-Größe als 'width,height' in Zoll"
+)
+@click.option(
+    "--output", "out_png",
+    default=None,
+    help="(optional) Pfad, um den Plot als PNG zu speichern"
+)
+def main(
+    gpkg_path: str,
+    buffer_path: str,
+    ais_csv: str,
+    ant_lat: float,
+    ant_lon: float,
+    radius_km: float,
+    figsize: str,
+    out_png: str,
+):
+    # ───────────────────────────────────────────────────────────────────
+    # Parameter parsen & Log
+    # ───────────────────────────────────────────────────────────────────
+    fig_w, fig_h = map(float, figsize.split(","))
+    radius_m = radius_km * 1000
+    crs_plot = "EPSG:3857"
 
-def main():
-    # 1) Config laden (für Antennen-Koordinaten)
-    logger.info(f"→ Lade Config: {CONFIG_PATH}")
-    cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    ant_lat = cfg["antenna"]["latitude"]
-    ant_lon = cfg["antenna"]["longitude"]
-    logger.info(f"→ Antenne bei (lat, lon) = ({ant_lat}, {ant_lon})")
-    radius_m = PLOT_RADIUS_KM * 1_000
-    logger.info(f"→ Plot-Radius = {PLOT_RADIUS_KM} km ({radius_m:.0f} m)")
+    log.info(f"Antenne @ ({ant_lat:.6f}, {ant_lon:.6f}), Radius = {radius_km} km")
+    log.info(f"Basemap GPKG      : {gpkg_path}")
+    log.info(f"Puffer-GeoJSON    : {buffer_path}")
+    log.info(f"AIS-CSV           : {ais_csv}")
+    log.info(f"Figure-Größe (in) : {fig_w}×{fig_h}")
 
-    # 2) Basemap laden und in Meter-CRS reprojizieren
-    logger.info(f"📂 Lade Basemap aus GeoPackage: {GPKG_PATH}")
-    basemap_parts = []
-    for layer in LAYERS:
-        try:
-            g = gpd.read_file(GPKG_PATH, layer=layer).to_crs(epsg=3857)
-            basemap_parts.append(g)
-            logger.info(f"  Layer '{layer}': {len(g):,} Features")
-        except Exception as e:
-            logger.warning(f"⚠️  Konnte Layer '{layer}' nicht laden: {e}")
-    if not basemap_parts:
-        logger.error("Keine Basemap-Layer geladen – Abbruch")
-        return
-    basemap = gpd.GeoDataFrame(
-        pd.concat(basemap_parts, ignore_index=True),
-        crs="EPSG:3857"
-    )
+    # ───────────────────────────────────────────────────────────────────
+    # 1) Extent bestimmen
+    # ───────────────────────────────────────────────────────────────────
+    if Path(buffer_path).exists():
+        buf = gpd.read_file(buffer_path).to_crs(crs_plot)
+        minx, miny, maxx, maxy = buf.total_bounds
+        log.info("Extent aus Puffer-GeoJSON geladen")
+    else:
+        center = Point(ant_lon, ant_lat)
+        circle = (
+            gpd.GeoSeries([center], crs="EPSG:4326")
+            .to_crs(crs_plot)
+            .buffer(radius_m)
+            .iloc[0]
+        )
+        minx, miny, maxx, maxy = circle.bounds
+        log.info("Extent aus Kreis um Antenne erstellt")
 
-    # 3) Antennen-Punkt & Kreis-Polygon in Meter-CRS
-    ant_point = gpd.GeoSeries(
-        [Point(ant_lon, ant_lat)],
-        crs="EPSG:4326"
-    ).to_crs(epsg=3857).iloc[0]
-    circle = ant_point.buffer(radius_m)
-    minx, miny, maxx, maxy = circle.bounds
-    logger.info(f"  Kreis-Bounds (EPSG:3857): {minx:.0f}, {miny:.0f}, {maxx:.0f}, {maxy:.0f}")
+    bbox = box(minx, miny, maxx, maxy)
+    bbox_gdf = gpd.GeoDataFrame(geometry=[bbox], crs=crs_plot)
 
-    # 4) Basemap auf Kreis-Extent clippen
-    logger.info("🔪 Clippe Basemap auf 30 km-Kreis")
-    basemap_clipped = gpd.clip(basemap, circle)
+    # ───────────────────────────────────────────────────────────────────
+    # 2) Basemap laden & klassifizieren
+    # ───────────────────────────────────────────────────────────────────
+    mp_layer = "multipolygons"
+    gdf = gpd.read_file(gpkg_path, layer=mp_layer).to_crs(crs_plot)
+    gdf = gpd.clip(gdf, bbox)
+    log.info(f"{len(gdf):,} Polygone aus '{mp_layer}' geladen und geclippt")
 
-    # 5) AIS-Daten laden und Track-Linien erzeugen
-    logger.info(f"📥 Lade AIS-Daten: {AIS_CSV}")
-    df = pd.read_csv(AIS_CSV, parse_dates=["# Timestamp"])
-    logger.info(f"→ {len(df):,} AIS-Meldungen geladen")
+    wasser_tags = ["water", "wetland", "bay", "beach", "strait", "sand", "shingle", "mud"]
+    water = gdf[
+        gdf.get("natural", "").isin(wasser_tags) |
+        (gdf.get("seamark:sea_area:category", "") != "")
+    ]
+    mil   = gdf[gdf.get("landuse", "") == "military"]
+    prot  = gdf[gdf.get("boundary", "") == "protected_area"]
+    land  = gdf.drop(water.index.union(mil.index).union(prot.index))
+    log.info(f"Land:{len(land):,}, Wasser:{len(water):,}, Mil:{len(mil):,}, Prot:{len(prot):,}")
 
-    logger.info("🔗 Erzeuge Track-Linien pro MMSI")
-    df_sorted = df.sort_values(["MMSI", "# Timestamp"])
-    tracks = df_sorted.groupby("MMSI")[["Longitude", "Latitude"]].apply(
-        lambda pts: LineString(pts.values)
-    )
+    # ───────────────────────────────────────────────────────────────────
+    # 3) AIS-Tracks erzeugen & clippen (pro MMSI + Segment)
+    # ───────────────────────────────────────────────────────────────────
+    df = pd.read_csv(ais_csv, parse_dates=["# Timestamp"])
+    df = df.sort_values(["MMSI", "# Timestamp"])
+    log.info(f"{len(df):,} AIS-Meldungen geladen")
+
+    # Funktion, die nur Linien für Gruppen mit ≥2 Punkten erzeugt
+    def make_line(pts: pd.DataFrame) -> LineString | None:
+        coords = pts.values
+        return LineString(coords) if len(coords) > 1 else None
+
+    seg_tracks = df.groupby(["MMSI", "segment_idx"])[["Longitude", "Latitude"]]
+    lines = seg_tracks.apply(make_line)
+    lines = lines.dropna()
     tracks_gdf = gpd.GeoDataFrame(
-        {"MMSI": tracks.index.get_level_values(0)},
-        geometry=tracks.values,
+        {
+            "MMSI": lines.index.get_level_values(0),
+            "segment_idx": lines.index.get_level_values(1),
+        },
+        geometry=lines.values,
         crs="EPSG:4326"
-    ).to_crs(epsg=3857)
-    logger.info(f"→ {len(tracks_gdf):,} Tracks erzeugt")
+    ).to_crs(crs_plot)
+    tracks_clipped = gpd.clip(tracks_gdf, bbox)
+    log.info(f"{len(tracks_clipped):,} Tracks im Radius-Extent verbleibend")
 
-    # 6) Tracks auf Kreis-Polygon beschneiden
-    logger.info("🔪 Clippe Tracks auf 30 km-Kreis")
-    tracks_clipped = gpd.clip(tracks_gdf, circle)
-    logger.info(f"→ {len(tracks_clipped):,} Tracks im Kreis verbleibend")
+    # ───────────────────────────────────────────────────────────────────
+    # 4) Plotten
+    # ───────────────────────────────────────────────────────────────────
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    # Hintergrund
+    bbox_gdf.plot(ax=ax, color="#d0e7f9", zorder=0)
+    land.plot(ax=ax, facecolor="#f5f2eb", edgecolor="gray", lw=0.5, zorder=1)
+    water.plot(ax=ax, facecolor="#a6cee3", edgecolor="black", lw=0.5, zorder=2)
+    mil.plot(ax=ax, facecolor="red", edgecolor="#8B0000", alpha=0.4,
+             linestyle="--", lw=1.5, zorder=3)
+    prot.plot(ax=ax, facecolor="none", edgecolor="green", lw=1.5, zorder=4)
 
-    # 7) Plot erstellen
-    logger.info("🖼️  Erstelle Plot")
-    fig, ax = plt.subplots(figsize=(10, 10))
-    basemap_clipped.plot(
-        ax=ax, facecolor="#f5f2eb",
-        edgecolor="gray", linewidth=0.5, zorder=1
+    # AIS-Tracks + Antenne
+    tracks_clipped.plot(ax=ax, color="crimson", lw=0.7, alpha=0.6, zorder=5)
+    ant_pt = (
+        gpd.GeoSeries([Point(ant_lon, ant_lat)], crs="EPSG:4326")
+        .to_crs(crs_plot)
     )
-    tracks_clipped.plot(
-        ax=ax, linewidth=0.7,
-        alpha=0.6, color="crimson", zorder=2
-    )
-    # Antennenpunkt markieren
-    gpd.GeoSeries([ant_point]).plot(
-        ax=ax, color="blue", markersize=50,
-        marker="*", zorder=3
-    )
+    ant_pt.plot(ax=ax, color="blue", marker="*", markersize=100, zorder=6)
 
-    # Achsenbegrenzung auf Kreis-Bounds
+    # Legende
+    handles = [
+        mpatches.Patch(facecolor="#f5f2eb", edgecolor="gray", label="Land"),
+        mpatches.Patch(facecolor="#a6cee3", edgecolor="black", label="Wasser"),
+        Line2D([0], [0], marker="s", color="none", markerfacecolor="red",
+               markeredgecolor="#8B0000", linestyle="--", label="Military"),
+        Line2D([0], [0], color="green", lw=2, label="Protected"),
+        Line2D([0], [0], color="crimson", lw=1, label="AIS-Tracks"),
+        Line2D([0], [0], marker="*", color="blue", linestyle="None",
+               markersize=10, label="Antenne"),
+    ]
+    ax.legend(handles=handles, loc="lower left", fontsize=8)
+
     ax.set_xlim(minx, maxx)
     ax.set_ylim(miny, maxy)
-
-    ax.set_axis_off()
-    ax.set_title(f"AIS-Tracks (±{PLOT_RADIUS_KM} km um Antenne)", pad=16)
+    ax.axis("off")
+    ax.set_title(f"AIS-Tracks ±{radius_km:.0f} km um Antenne", pad=16)
     plt.tight_layout()
-    plt.show()
+
+    # speichern oder interaktiv anzeigen
+    if out_png:
+        os.makedirs(os.path.dirname(out_png), exist_ok=True)
+        plt.savefig(out_png, dpi=300, bbox_inches="tight")
+        log.info(f"Plot gespeichert: {out_png}")
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
