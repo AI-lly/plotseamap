@@ -66,7 +66,7 @@ def main(cfg_path: str) -> None:
         in_csv,
         low_memory=False,          # schnelleres Laden, kein dtype‑Guessing
         # Nur benötigte Spalten; Timestamp ggf. später noch relevant
-        usecols=[lat_col, lon_col, ts_col, "MMSI", "Destination"],
+        usecols=[lat_col, lon_col, ts_col, "MMSI", "Destination", "segment_idx"],
     )
     log.info(f"→ {len(df):,} Zeilen geladen")
 
