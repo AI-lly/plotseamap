@@ -29,7 +29,8 @@
 
     "interpolation": {
         "interval_seconds": 20,     
-        "max_gap_minutes": 60        
+        "max_gap_minutes": 20,
+        "use_destination": false
       },
     
     "statistics": {
