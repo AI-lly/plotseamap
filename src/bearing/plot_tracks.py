@@ -4,8 +4,10 @@
 src/bearing/plot_tracks.py
 
 Zeichnet AIS-Tracklinien auf die Basemap aus plotseamap.
-Alles vorkonfiguriert, so dass kein weiteres CLI-Argument nötig ist.
-Override möglich über --help-Optionen.
+Tracks werden segmentweise (MMSI + segment_idx) erzeugt und nur
+Gruppen mit ≥2 Punkten geplottet. Der Plot wird standardmäßig
+nach src/bearing/processed_data/tracks_plot.png gespeichert.
+Override über --output möglich.
 """
 import os
 import logging
@@ -31,68 +33,41 @@ log = logging.getLogger(__name__)
 # ───────────────────────────────────────────────────────────────────────
 # Vorkonfigurierte Defaults
 # ───────────────────────────────────────────────────────────────────────
-DEFAULT_GPKG       = "src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg"
-DEFAULT_BUFFER     = "src/plotseamap/processed_data/geojson/fehmarnbelt_buffer.geojson"
-DEFAULT_AIS_CSV    = "src/bearing/processed_data/05_distance.csv"
-DEFAULT_ANT_LAT    = 54.578614
-DEFAULT_ANT_LON    = 11.289016
-DEFAULT_RADIUS_KM  = 30.0
-DEFAULT_FIGSIZE    = "10,8"
-
+DEFAULT_GPKG        = "src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg"
+DEFAULT_BUFFER      = "src/plotseamap/processed_data/geojson/fehmarnbelt_buffer.geojson"
+DEFAULT_AIS_CSV     = "src/bearing/processed_data/05_distance.csv"
+DEFAULT_ANT_LAT     = 54.578614
+DEFAULT_ANT_LON     = 11.289016
+DEFAULT_RADIUS_KM   = 20.0
+DEFAULT_FIGSIZE     = "10,8"
+DEFAULT_OUT_PNG     = "src/bearing/plots/tracks_plot.png"
 
 @click.command()
-@click.option(
-    "--gpkg", "gpkg_path",
-    default=DEFAULT_GPKG,
-    show_default=True,
-    help="GeoPackage (Basemap) mit OSM-Layern"
-)
-@click.option(
-    "--buffer-geojson", "buffer_path",
-    default=DEFAULT_BUFFER,
-    show_default=True,
-    help="GeoJSON mit Puffer-Polygon für Extent"
-)
-@click.option(
-    "--ais-csv", "ais_csv",
-    default=DEFAULT_AIS_CSV,
-    show_default=True,
-    help="AIS-Daten-CSV (mit Spalte dist_m)"
-)
-@click.option(
-    "--ant-lat", "ant_lat",
-    default=DEFAULT_ANT_LAT,
-    show_default=True,
-    type=float,
-    help="Breitengrad der Antenne"
-)
-@click.option(
-    "--ant-lon", "ant_lon",
-    default=DEFAULT_ANT_LON,
-    show_default=True,
-    type=float,
-    help="Längengrad der Antenne"
-)
-@click.option(
-    "--radius-km", "radius_km",
-    default=DEFAULT_RADIUS_KM,
-    show_default=True,
-    type=float,
-    help="Radius um die Antenne in km"
-)
-@click.option(
-    "--figsize", "figsize",
-    default=DEFAULT_FIGSIZE,
-    show_default=True,
-    help="Figure-Größe als 'width,height' in Zoll"
-)
-@click.option(
-    "--output", "out_png",
-    default=None,
-    help="(optional) Pfad, um den Plot als PNG zu speichern"
-)
+@click.option("--gpkg",        default=DEFAULT_GPKG,    show_default=True,
+              help="GeoPackage mit Basemap-Layern")
+@click.option("--buffer-geojson", "buffer_path",
+              default=DEFAULT_BUFFER, show_default=True,
+              help="GeoJSON mit Puffer-Polygon für Extent")
+@click.option("--ais-csv",     "ais_csv",
+              default=DEFAULT_AIS_CSV, show_default=True,
+              help="AIS-CSV (muss col 'segment_idx' enthalten)")
+@click.option("--ant-lat",     "ant_lat",
+              default=DEFAULT_ANT_LAT, show_default=True,
+              type=float, help="Antenne Breitengrad")
+@click.option("--ant-lon",     "ant_lon",
+              default=DEFAULT_ANT_LON, show_default=True,
+              type=float, help="Antenne Längengrad")
+@click.option("--radius-km",   "radius_km",
+              default=DEFAULT_RADIUS_KM, show_default=True,
+              type=float, help="Plot-Radius um Antenne (km)")
+@click.option("--figsize",     "figsize",
+              default=DEFAULT_FIGSIZE, show_default=True,
+              help="Figure-Größe 'width,height' in Zoll")
+@click.option("--output",      "out_png",
+              default=DEFAULT_OUT_PNG, show_default=True,
+              help="Pfad zum Speichern des PNGs")
 def main(
-    gpkg_path: str,
+    gpkg: str,
     buffer_path: str,
     ais_csv: str,
     ant_lat: float,
@@ -101,22 +76,19 @@ def main(
     figsize: str,
     out_png: str,
 ):
-    # ───────────────────────────────────────────────────────────────────
-    # Parameter parsen & Log
-    # ───────────────────────────────────────────────────────────────────
+    # — Parameter & Logging —
     fig_w, fig_h = map(float, figsize.split(","))
-    radius_m = radius_km * 1000
-    crs_plot = "EPSG:3857"
+    radius_m     = radius_km * 1000
+    crs_plot     = "EPSG:3857"
 
     log.info(f"Antenne @ ({ant_lat:.6f}, {ant_lon:.6f}), Radius = {radius_km} km")
-    log.info(f"Basemap GPKG      : {gpkg_path}")
-    log.info(f"Puffer-GeoJSON    : {buffer_path}")
-    log.info(f"AIS-CSV           : {ais_csv}")
-    log.info(f"Figure-Größe (in) : {fig_w}×{fig_h}")
+    log.info(f"Basemap GPKG   : {gpkg}")
+    log.info(f"Puffer-GeoJSON : {buffer_path}")
+    log.info(f"AIS-CSV        : {ais_csv}")
+    log.info(f"Figure-Size    : {fig_w}×{fig_h}")
+    log.info(f"Output-PNG     : {out_png}")
 
-    # ───────────────────────────────────────────────────────────────────
-    # 1) Extent bestimmen
-    # ───────────────────────────────────────────────────────────────────
+    # — 1) Extent bestimmen —
     if Path(buffer_path).exists():
         buf = gpd.read_file(buffer_path).to_crs(crs_plot)
         minx, miny, maxx, maxy = buf.total_bounds
@@ -135,53 +107,43 @@ def main(
     bbox = box(minx, miny, maxx, maxy)
     bbox_gdf = gpd.GeoDataFrame(geometry=[bbox], crs=crs_plot)
 
-    # ───────────────────────────────────────────────────────────────────
-    # 2) Basemap laden & klassifizieren
-    # ───────────────────────────────────────────────────────────────────
+    # — 2) Basemap laden & klassifizieren —
     mp_layer = "multipolygons"
-    gdf = gpd.read_file(gpkg_path, layer=mp_layer).to_crs(crs_plot)
+    gdf = gpd.read_file(gpkg, layer=mp_layer).to_crs(crs_plot)
     gdf = gpd.clip(gdf, bbox)
     log.info(f"{len(gdf):,} Polygone aus '{mp_layer}' geladen und geclippt")
 
-    wasser_tags = ["water", "wetland", "bay", "beach", "strait", "sand", "shingle", "mud"]
+    wasser_tags = ["water","wetland","bay","beach","strait","sand","shingle","mud"]
     water = gdf[
-        gdf.get("natural", "").isin(wasser_tags) |
-        (gdf.get("seamark:sea_area:category", "") != "")
+        gdf.get("natural","").isin(wasser_tags) |
+        (gdf.get("seamark:sea_area:category","") != "")
     ]
-    mil   = gdf[gdf.get("landuse", "") == "military"]
-    prot  = gdf[gdf.get("boundary", "") == "protected_area"]
-    land  = gdf.drop(water.index.union(mil.index).union(prot.index))
+    mil  = gdf[gdf.get("landuse","")=="military"]
+    prot = gdf[gdf.get("boundary","")=="protected_area"]
+    land = gdf.drop(water.index.union(mil.index).union(prot.index))
     log.info(f"Land:{len(land):,}, Wasser:{len(water):,}, Mil:{len(mil):,}, Prot:{len(prot):,}")
 
-    # ───────────────────────────────────────────────────────────────────
-    # 3) AIS-Tracks erzeugen & clippen (pro MMSI + Segment)
-    # ───────────────────────────────────────────────────────────────────
+    # — 3) AIS-Tracks pro Segment erzeugen & clippen —
     df = pd.read_csv(ais_csv, parse_dates=["# Timestamp"])
     df = df.sort_values(["MMSI", "# Timestamp"])
     log.info(f"{len(df):,} AIS-Meldungen geladen")
 
-    # Funktion, die nur Linien für Gruppen mit ≥2 Punkten erzeugt
     def make_line(pts: pd.DataFrame) -> LineString | None:
         coords = pts.values
         return LineString(coords) if len(coords) > 1 else None
 
-    seg_tracks = df.groupby(["MMSI", "segment_idx"])[["Longitude", "Latitude"]]
-    lines = seg_tracks.apply(make_line)
-    lines = lines.dropna()
-    tracks_gdf = gpd.GeoDataFrame(
-        {
-            "MMSI": lines.index.get_level_values(0),
-            "segment_idx": lines.index.get_level_values(1),
-        },
-        geometry=lines.values,
-        crs="EPSG:4326"
-    ).to_crs(crs_plot)
+    seg_tracks = df.groupby(["MMSI","segment_idx"])[["Longitude","Latitude"]]
+    lines = seg_tracks.apply(make_line).dropna()
+    tracks_gdf = gpd.GeoDataFrame({
+        "MMSI":         lines.index.get_level_values(0),
+        "segment_idx":  lines.index.get_level_values(1),
+    }, geometry=lines.values, crs="EPSG:4326") \
+        .to_crs(crs_plot)
+
     tracks_clipped = gpd.clip(tracks_gdf, bbox)
     log.info(f"{len(tracks_clipped):,} Tracks im Radius-Extent verbleibend")
 
-    # ───────────────────────────────────────────────────────────────────
-    # 4) Plotten
-    # ───────────────────────────────────────────────────────────────────
+    # — 4) Plotten —
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
     # Hintergrund
     bbox_gdf.plot(ax=ax, color="#d0e7f9", zorder=0)
@@ -191,7 +153,7 @@ def main(
              linestyle="--", lw=1.5, zorder=3)
     prot.plot(ax=ax, facecolor="none", edgecolor="green", lw=1.5, zorder=4)
 
-    # AIS-Tracks + Antenne
+    # AIS-Tracks & Antenne
     tracks_clipped.plot(ax=ax, color="crimson", lw=0.7, alpha=0.6, zorder=5)
     ant_pt = (
         gpd.GeoSeries([Point(ant_lon, ant_lat)], crs="EPSG:4326")
@@ -203,12 +165,13 @@ def main(
     handles = [
         mpatches.Patch(facecolor="#f5f2eb", edgecolor="gray", label="Land"),
         mpatches.Patch(facecolor="#a6cee3", edgecolor="black", label="Wasser"),
-        Line2D([0], [0], marker="s", color="none", markerfacecolor="red",
-               markeredgecolor="#8B0000", linestyle="--", label="Military"),
-        Line2D([0], [0], color="green", lw=2, label="Protected"),
-        Line2D([0], [0], color="crimson", lw=1, label="AIS-Tracks"),
-        Line2D([0], [0], marker="*", color="blue", linestyle="None",
-               markersize=10, label="Antenne"),
+        Line2D([0],[0], marker="s", color="none",
+               markerfacecolor="red", markeredgecolor="#8B0000",
+               linestyle="--", label="Military"),
+        Line2D([0],[0], color="green", lw=2,             label="Protected"),
+        Line2D([0],[0], color="crimson", lw=1,            label="AIS-Tracks"),
+        Line2D([0],[0], marker="*", color="blue",
+               linestyle="None", markersize=10, label="Antenne"),
     ]
     ax.legend(handles=handles, loc="lower left", fontsize=8)
 
@@ -218,14 +181,13 @@ def main(
     ax.set_title(f"AIS-Tracks ±{radius_km:.0f} km um Antenne", pad=16)
     plt.tight_layout()
 
-    # speichern oder interaktiv anzeigen
-    if out_png:
-        os.makedirs(os.path.dirname(out_png), exist_ok=True)
-        plt.savefig(out_png, dpi=300, bbox_inches="tight")
-        log.info(f"Plot gespeichert: {out_png}")
-    else:
-        plt.show()
-
+    # — 5) Speichern / Anzeigen —
+    os.makedirs(os.path.dirname(out_png), exist_ok=True)
+    plt.savefig(out_png, dpi=300, bbox_inches="tight")
+    log.info(f"Plot gespeichert: {out_png}")
 
 if __name__ == "__main__":
     main()
+
+
+# python src/bearing/plot_tracks.py   

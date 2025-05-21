@@ -10,7 +10,7 @@
 
   "lon":    11.289016242073087,
   "lat":    54.578614024736964,
-  "radius": 40,
+  "radius": 30,
 
   "output_gpkg": "src/plotseamap/processed_data/gpkg/fehmarnbelt_data.gpkg",
 
