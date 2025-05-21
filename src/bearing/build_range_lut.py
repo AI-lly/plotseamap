@@ -123,6 +123,9 @@ def main(cfg_path: str) -> None:
         np.divide(hist, sums, out=raw, where=sums != 0)
     prob_cube = raw.astype("float32")
 
+    # 8b) (Optional) die rohen Counts mit abspeichern
+    counts_cube = hist.astype("int32")
+
     # 9) Lookup-Tabelle speichern
     logger.info(f"💾 Speicher Lookup-Table nach: {out_pkl}")
     os.makedirs(os.path.dirname(out_pkl), exist_ok=True)
@@ -133,9 +136,11 @@ def main(cfg_path: str) -> None:
                 "rate_edges": rate_edges,
                 "range_vec":  range_vec.tolist()
             },
-            "prob_cube": prob_cube
+            "prob_cube": prob_cube,
+            "counts_cube": counts_cube,
         }, f)
     logger.info("✅ Lookup-Tabelle erfolgreich gespeichert")
+    print(counts_cube.shape)
 
 
 if __name__ == "__main__":
