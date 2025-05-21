@@ -131,7 +131,7 @@ python src/bearing/preprocess/compute_distance.py --config src/bearing/config/be
 python src/bearing/compute_sector_stats.py --config src/bearing/config/bearing.json
 
 # 4) Lookup-Table erzeugen & Abfrage
-python src/bearing/build_range_lut.py --config src/bearing/config/bearing.json
+python src/bearing/build_range_lut.py --config src/bearing/config/bearing.json   
 python src/bearing/lookup_range.py 88 -0.042 --lut src/bearing/processed_data/range_lut.pkl
 
 # Ergebnisse finden Sie in:

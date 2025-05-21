@@ -12,6 +12,7 @@ import logging
 import pickle
 import numpy as np
 from pathlib import Path
+from typing import Union, Tuple, Optional
 
 # ───────────────────────────────────────────────────────────────────────
 # Logging konfigurieren
@@ -26,7 +27,10 @@ logger = logging.getLogger(__name__)
 LUT_PATH = Path("src/bearing/processed_data/range_lut.pkl")
 
 
-def load_lut(path: str | Path = LUT_PATH) -> dict:
+def load_lut(path: Union[str, Path] = LUT_PATH) -> dict:
+    """
+    Lädt die Pickle-LUT von `path` und gibt das Dict zurück.
+    """
     logger.info(f"📂 Lade Lookup-Tabelle: {path}")
     with open(path, "rb") as f:
         lut = pickle.load(f)
@@ -38,7 +42,7 @@ def lookup_range_pdf(
     theta: float,
     omega: float,
     lut: dict
-) -> tuple[np.ndarray | None, np.ndarray | None]:
+) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
     """
     Liefert (range_vec, pdf) für gegebenen Bearing (θ) und Rate (ω).
     Gibt (None, None) zurück, wenn keine gültige Kombination existiert.
@@ -46,21 +50,22 @@ def lookup_range_pdf(
     p = lut["params"]
     cube = lut["prob_cube"]
 
-    # Bearing-Bin-Index
+    # 1) Bearing-Bin-Index
     be_i = int((theta % 360) // p["az_bin_deg"])
-    logger.debug(f"Bering θ={theta}° → Bin-Index {be_i}")
+    logger.debug(f"Bearing θ={theta}° → Bin-Index {be_i}")
 
-    # Rate-Bin-Index
+    # 2) Rate-Bin-Index
     abs_ω = abs(omega)
     edges = p["rate_edges"]
     ra_i = np.searchsorted(edges, abs_ω, side="right") - 1
     logger.debug(f"Rate |ω|={abs_ω}°/s → Bin-Index {ra_i}")
 
-    # Prüfen auf gültigen Index
+    # ungültiger Rate-Index?
     if ra_i < 0 or ra_i >= cube.shape[1]:
         logger.warning("⚠️  Rate außerhalb definierter Bins")
         return None, None
 
+    # 3) PDF extrahieren
     pdf = cube[be_i, ra_i]
     if pdf.sum() == 0:
         logger.warning("⚠️  Keine historisierten Daten für diese (θ, ω)-Kombination")
@@ -107,7 +112,7 @@ def main():
     logger.info(f"E[R]  ≈ {exp_r:,.0f} m")
     logger.info(f"Q10–Q90 ≈ {q10:,.0f} – {q90:,.0f} m")
 
-    # 4) Top-5 wahrscheinlichste Abstände
+    # 4) Top-5 Wahrscheinlichkeiten
     top5_idx = np.argsort(pdf)[-5:][::-1]
     logger.info("Top-5 Wahrscheinlichkeiten:")
     for idx in top5_idx:

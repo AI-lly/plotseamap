@@ -9,7 +9,8 @@
     "ais_filters": {
       "Type of mobile": ["Class A", "Class B"],
       "Navigational status": "Under way using engine",
-      "Type of position fixing device": "GPS"
+      "Type of position fixing device": "GPS",
+      "Ship type" : "Cargo"
     },
     "antenna": {
       "latitude": 54.578614,
