@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # ───────────────────────────────────────────────────────────────────────
 # default path to the lookup‐table pickle
 # ───────────────────────────────────────────────────────────────────────
-DEFAULT_LUT_PATH = Path("src/bearing/demo/range_lut.pkl")
+DEFAULT_LUT_PATH = Path("src/bearing/demo/lut.pkl")
 
 
 def load_lut(path: Path = DEFAULT_LUT_PATH) -> Dict:

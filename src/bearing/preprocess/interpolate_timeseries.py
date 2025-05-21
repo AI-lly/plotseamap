@@ -79,10 +79,11 @@ def main(cfg_path: str) -> None:
     mmsi_col = cfg.get("mmsi_column", "MMSI")
     dest_col = cfg.get("destination_column", "Destination")
 
-    ip = cfg.get("interpolation", {})
+    ip               = cfg.get("interpolation", {})
     interval_seconds = int(ip.get("interval_seconds", 20))
     gap_minutes      = int(ip.get("max_gap_minutes", 60))
     use_dest         = bool(ip.get("use_destination", True))
+    cols_to_interp   = ip.get("columns", [lat_col, lon_col])
 
     freq_str = f"{interval_seconds}s"
     gap_td   = pd.Timedelta(minutes=gap_minutes)
@@ -129,10 +130,7 @@ def main(cfg_path: str) -> None:
     logger.info(f"→ {total_segs:,} Segmente identifiziert")
 
     # 5) Spalten für Interpolation bestimmen
-    numeric_cols = [
-        c for c in df.columns
-        if df[c].dtype.kind in "fi" and c not in [lat_col, lon_col]
-    ] + [lat_col, lon_col]
+    numeric_cols = [c for c in cols_to_interp if c in df.columns]
     categorical_cols = [
         c for c in df.columns
         if c not in numeric_cols + [ts_col, mmsi_col, "segment_idx"]

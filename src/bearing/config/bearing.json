@@ -6,12 +6,18 @@
     "lat_column": "Latitude",
     "lon_column": "Longitude",
     "distance_column": "dist_m",
-    "ais_filters": {
-      "Type of mobile": ["Class A", "Class B"],
-      "Navigational status": "Under way using engine",
-      "Type of position fixing device": "GPS",
-      "Ship type" : "Cargo"
-    },
+    "columns": [
+      "# Timestamp",
+      "MMSI",
+      "Latitude",
+      "Longitude",
+      "Type of mobile",
+      "Navigational status",
+      "Type of position fixing device",
+      "Ship type",
+      "Destination"
+    ],
+    "ais_filters": {},
     "antenna": {
       "latitude": 54.578614,
       "longitude": 11.289016
@@ -30,7 +36,8 @@
     "interpolation": {
         "interval_seconds": 20,     
         "max_gap_minutes": 20,
-        "use_destination": false
+        "use_destination": false,
+        "columns": ["Latitude","Longitude"]
       },
     
     "statistics": {
@@ -38,6 +45,6 @@
       "rate_edges":     [0, 0.01, 0.03, 0.1, 0.3, 1, 3, 10],
       "r_step_m":       500,                        
       "r_max_m":        20000,                       
-      "output":         "src/bearing/processed_data/range_lut.pkl"
+      "output":         "src/bearing/demo/lut.pkl"
     }
   }

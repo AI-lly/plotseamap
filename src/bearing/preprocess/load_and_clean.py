@@ -51,15 +51,18 @@ def cli(config_path: str):
     drop_invalid_ts = cfg.get("drop_invalid_ts", True)
     filters         = cfg.get("ais_filters", {})
     output_csv      = cfg["output"]["cleaned_csv"]
+    usecols         = cfg.get("columns", None)  # falls nicht gesetzt: None
 
     # 3) Rohdaten einlesen
     log.info(f"📥 Lade Rohdaten: {input_csv}")
     df = pd.read_csv(
         input_csv,
+        usecols=usecols,
         parse_dates=[ts_col],
         dayfirst=dayfirst,
         low_memory=False
     )
+    log.info(f"→ Eingelesene Spalten: {df.columns.tolist()}")
     log.info(f"📥 Ursprüngliche AIS-Zeilen: {len(df):,}")
     log.info(f"📥 Ursprüngliche Schiffe: {df['MMSI'].nunique():,}")
 

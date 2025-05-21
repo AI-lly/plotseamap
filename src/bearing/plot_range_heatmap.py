@@ -19,7 +19,7 @@ import click
 @click.command()
 @click.option(
     "--lut", "lut_path",
-    default="src/bearing/processed_data/range_lut.pkl",
+    default="src/bearing/demo/lut.pkl",
     show_default=True,
     help="Pfad zur Lookup-Tabelle (Pickle)"
 )
