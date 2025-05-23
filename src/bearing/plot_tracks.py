@@ -41,7 +41,7 @@ DEFAULT_ANT_LAT    = 54.578614
 DEFAULT_ANT_LON    = 11.289016
 DEFAULT_RADIUS_KM  = 20.0
 DEFAULT_FIGSIZE    = "10,8"
-DEFAULT_OUT_PNG    = "src/bearing/processed_data/tracks_plot.png"
+DEFAULT_OUT_PNG    = "src/bearing/plots/tracks_plot.png"
 
 @click.command()
 @click.option(
