@@ -3,8 +3,6 @@
 """
 src/bearing/demo/get_bcr.py
 
-Reine Library-Version, kein CLI:
-
   * load_lut(path) -> Dict mit LUT-Daten
   * get_bcr_distribution(bearing, lut) -> (rate_intervals, prob_rate, counts_rate)
 """

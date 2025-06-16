@@ -79,8 +79,7 @@ def get_range_distribution(
 
     # 2) find rate bin index (using absolute value)
     edges       = params["rate_edges"]
-    omega_abs   = abs(omega)
-    rate_index  = np.searchsorted(edges, omega_abs, side="right") - 1
+    rate_index  = np.searchsorted(edges, omega, side="right") - 1
 
     # check validity
     if az_index < 0 or az_index >= prob_cube.shape[0] or \
