@@ -10,6 +10,7 @@ src/plotseamap/processed_data/
 src/plotseamap/output
 src/bearing/processed_data
 src/bearing/plots
+src/bearing/config
 
 #git rm -r --cached src/plotseamap/output
 #git commit -m "Ignore output directory"

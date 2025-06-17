@@ -92,16 +92,16 @@ def get_bcr_distribution(
 if __name__ == "__main__":
     # kurzes Usage-Beispiel
     lut = load_lut()
-    bearing = 88.0
+    bearing = 71.0
     intervals, prob_rate, counts_rate = get_bcr_distribution(bearing, lut)
 
     if prob_rate is not None:
         print(f"P(omega | bearing={bearing}°):")
         for (low, high), p in zip(intervals, prob_rate):
-            print(f"  [{low:.3f}, {high:.3f}) deg/s -> P = {p:.3f}")
+            print(f"  [{low:.10f}, {high:.10f}) deg/s -> P = {p:.10f}")
         if counts_rate is not None:
             print("\nCounts pro Bin:")
             for (low, high), c in zip(intervals, counts_rate):
-                print(f"  [{low:.3f}, {high:.3f}) deg/s -> count = {int(c)}")
+                print(f"  [{low:.10f}, {high:.10f}) deg/s -> count = {int(c)}")
     else:
         print("Keine Verteilung verfügbar für diesen Bearing.")

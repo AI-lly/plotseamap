@@ -61,7 +61,7 @@ def main(cfg_path):
     dist_col   = cfg.get("distance_column", "dist_m")
 
     # 3) Log-Space Rate-Edges (Exponenten von -2 bis +1, 21 Punkte)
-    pos_edges = np.logspace(-2, 1, num=21)
+    pos_edges = np.logspace(-5, 1, num=21)
     # Entferne 0 (ist nicht in logspace) und spiegle nach negativ
     neg_edges = -pos_edges[::-1]
     rate_edges = np.concatenate([neg_edges, pos_edges])
@@ -155,4 +155,4 @@ def main(cfg_path):
 if __name__ == "__main__":
     main()
 
-# python src/bearing/build_range_lut.py --config src/bearing/config/bearing.json   
+# python src/bearing/build_lut.py --config src/bearing/config/bearing.json   
