@@ -23,8 +23,8 @@
       "Type of position fixing device": "GPS",
       "Ship type": ["Cargo"]},
     "antenna": {
-      "latitude": 54.5,
-      "longitude": 11.3
+      "latitude": 54.8,
+      "longitude": 11.5
     },
     "bearing_column": "bearing",
     "output": {
